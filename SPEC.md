@@ -94,8 +94,9 @@ Anchors and quiz targets are always drawn from the in-play items.
 - A random in-play `(button, direction)`, on either row.
 - Shown with a **thick magenta outline**, plus a magenta **badge with the direction
   arrow and the anchor's note name**. With the rows drawn vertically, "above" the button
-  is where the next button sits, so the badge goes on the outside of the keyboard
-  next to the button: left of the inner row, right of the outer row.
+  is where the next button sits, so the badge goes **left of the inner row** at the
+  anchor's height (the right side belongs to the thumb). For an outer-row anchor, a
+  leader line runs from the badge through the gap in the staggered inner row.
 - Stays highlighted for the whole round (all quizzes on that anchor).
 
 ### 3.2 Direction arrows
@@ -160,10 +161,14 @@ Mobile-first, portrait. It should also work on desktop.
 - The rows are vertical, the way you see them while playing: **lowest notes at the
   top**, D row (inner) on the left, C# row (outer) on the right, with the half-button
   stagger.
-- **Tilt:** the keyboard drawing (zoomed view and minimap) is rotated clockwise, so
-  the rows lean right like the view looking down from the player's top-right. The
-  **Tilt** dropdown offers Off / 10° / 20° / 30°, default 20°. Note names, arrows and
-  the anchor badge stay upright. The view is sized to fit the rotated box.
+- **Tilt:** the keyboard drawing (zoomed view and minimap) is rotated clockwise and
+  then squashed horizontally, so the rows lean right, the box becomes a slanted
+  parallelogram and the buttons become ovals, like the player's view looking down from
+  the top-right. The **Tilt** dropdown offers Off / 10° / 20° / 30°, default 20°. Off
+  draws it flat, with no squash. Note names, arrows and the anchor badge stay upright
+  and undistorted.
+- **Hand:** a cartoon thumb pressed against the outer (right) edge of the box, with the
+  palm and forearm running off the screen, drawn on the same tilted plane.
 
 ### 4.2 Zoomed box view
 

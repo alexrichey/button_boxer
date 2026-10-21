@@ -15,6 +15,10 @@
   --target-text: #ffffff;
   --correct: #16a34a;
   --wrong: #dc2626;
+  --skin: #f2c9a5;
+  --skin-shade: #d9a47c;
+  --skin-line: #9c6b4a;
+  --nail: #fbe3d3;
 
   color-scheme: light dark;
 }
@@ -33,6 +37,10 @@
     --box-stroke: #6f685e;
     --anchor: #ff4fa7;
     --target: #3b82f6;
+    --skin: #c99a76;
+    --skin-shade: #a87a58;
+    --skin-line: #6e4a33;
+    --nail: #e3c0aa;
   }
 }
 
@@ -187,6 +195,49 @@ select {
 
 .mini .btn {
   stroke-width: 0.08;
+}
+
+.anchor-leader {
+  stroke: var(--anchor);
+  stroke-width: 0.07;
+  stroke-linecap: round;
+}
+
+.hand .arm-outline {
+  stroke: var(--skin-line);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.hand .arm {
+  stroke: var(--skin-shade);
+  stroke-width: 2.42;
+  stroke-linecap: round;
+}
+
+.hand .palm {
+  fill: var(--skin-shade);
+  stroke: var(--skin-line);
+  stroke-width: 0.04;
+}
+
+.hand .thumb {
+  fill: var(--skin);
+  stroke: var(--skin-line);
+  stroke-width: 0.04;
+}
+
+.hand .nail {
+  fill: var(--nail);
+  stroke: var(--skin-line);
+  stroke-width: 0.025;
+}
+
+.hand .knuckle {
+  fill: none;
+  stroke: var(--skin-line);
+  stroke-width: 0.03;
+  stroke-linecap: round;
 }
 
 .box {

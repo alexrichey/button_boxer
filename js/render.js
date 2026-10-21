@@ -1,6 +1,11 @@
 // SVG drawing for the zoomed box view and the minimap.
 // Units: 1 = one button step along a row. Rows run top (low) to bottom (high);
 // the first row in the layout (inner) is drawn on the left.
+//
+// The keyboard is drawn flat, then put through a view transform (rotate clockwise,
+// then squash horizontally) so it looks like the player's angled view: the box
+// becomes a slanted parallelogram and the buttons become ovals. Labels are
+// counter-transformed so they stay upright and undistorted.
 
 import { spell } from './theory.js';
 import { inBox, noteOf } from './quiz.js';
@@ -8,7 +13,10 @@ import { inBox, noteOf } from './quiz.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const COL = 1.0; // horizontal distance between rows
 const R = 0.42; // button radius
-const BADGE_GAP = 1.15; // anchor badge distance from its button
+const BADGE_GAP = 1.15; // anchor badge distance left of the inner row
+const BOX_PAD_X = 0.6;
+const BOX_PAD_Y = 0.48;
+const SQUASH = 0.72; // horizontal foreshortening when tilted
 
 export const ARROW = { pull: '←', push: '→' };
 
@@ -21,8 +29,35 @@ function el(name, attrs = {}, text) {
 
 const rowX = (button) => button.rowIndex * COL;
 
-// The anchor badge sits outside the keyboard: left of the first row, right of the rest.
-const badgeSide = (button) => (button.rowIndex === 0 ? -1 : 1);
+// Linear part of the view transform, plus its inverse (for upright labels).
+function viewMatrix(tilt) {
+  const rad = (tilt * Math.PI) / 180;
+  const sx = tilt ? SQUASH : 1;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  // scale(sx, 1) · rotate(tilt), in SVG matrix(a b c d) order.
+  const m = { a: sx * cos, b: sin, c: -sx * sin, d: cos };
+  const det = m.a * m.d - m.b * m.c;
+  const inv = { a: m.d / det, b: -m.b / det, c: -m.c / det, d: m.a / det };
+  return { m, inv };
+}
+
+const matrixAttr = ({ a, b, c, d }, e = 0, f = 0) => `matrix(${a} ${b} ${c} ${d} ${e} ${f})`;
+
+// A cartoon thumb pressed against the outer edge of the box; palm and forearm run off-screen.
+function drawHand(parent, x, cy) {
+  const g = el('g', { class: 'hand' });
+  const px = x + 1.9;
+  const py = cy + 0.9;
+  const arm = { x1: px, y1: py, x2: px + 9, y2: py + 9 };
+  g.append(el('line', { class: 'arm-outline', ...arm }));
+  g.append(el('line', { class: 'arm', ...arm }));
+  g.append(el('ellipse', { class: 'palm', cx: px, cy: py, rx: 1.45, ry: 2.1 }));
+  g.append(el('rect', { class: 'thumb', x, y: cy - 1.5, width: 0.66, height: 2.9, rx: 0.33 }));
+  g.append(el('rect', { class: 'nail', x: x + 0.13, y: cy - 1.36, width: 0.4, height: 0.5, rx: 0.16 }));
+  g.append(el('path', { class: 'knuckle', d: `M ${x + 0.16} ${cy + 0.15} q 0.17 0.09 0.34 0` }));
+  parent.append(g);
+}
 
 /**
  * @param {SVGSVGElement} svg
@@ -32,62 +67,86 @@ const badgeSide = (button) => (button.rowIndex === 0 ? -1 : 1);
  *   revealed                   show the target's note
  *   tint                       'correct' | 'wrong' | null (reveal colouring)
  *   flash                      animate the target as it appears
- *   mini                       draw the whole keyboard, no labels
- *   tilt                       degrees to rotate the keyboard clockwise (labels stay upright)
+ *   mini                       draw the whole keyboard, no labels or hand
+ *   tilt                       degrees to tilt the keyboard clockwise (0 = flat, no squash)
  */
 export function drawKeyboard(svg, layout, view) {
   const { box, anchor, target, key, revealed, tint, flash, mini, tilt = 0 } = view;
   svg.replaceChildren();
+  svg.classList.toggle('mini', !!mini);
 
   const lastX = (layout.rows.length - 1) * COL;
-  const buttons = mini || !box ? layout.buttons : layout.buttons.filter((b) => inBox(box, b));
+  const whole = mini || !box;
+  const buttons = whole ? layout.buttons : layout.buttons.filter((b) => inBox(box, b));
   const positions = buttons.map((b) => b.pos);
-  const top = mini || !box ? Math.min(...positions) : box.lo;
-  const bottom = mini || !box ? Math.max(...positions) : box.hi;
+  const top = whole ? Math.min(...positions) : box.lo;
+  const bottom = whole ? Math.max(...positions) : box.hi;
   const cx = lastX / 2;
   const cy = (top + bottom) / 2;
+  const boxRight = lastX + BOX_PAD_X;
+  const showHand = !mini && !!box;
 
-  // Fit the viewBox to the rotated content: the box outline, plus the anchor badge.
-  const rad = (tilt * Math.PI) / 180;
-  const rotate = ([x, y]) => [
-    cx + (x - cx) * Math.cos(rad) - (y - cy) * Math.sin(rad),
-    cy + (x - cx) * Math.sin(rad) + (y - cy) * Math.cos(rad),
+  const { m, inv } = viewMatrix(tilt);
+  const toScreen = ([x, y]) => [
+    cx + m.a * (x - cx) + m.c * (y - cy),
+    cy + m.b * (x - cx) + m.d * (y - cy),
   ];
+
+  // Fit the viewBox to the transformed content: box outline, thumb, anchor badge.
+  // The palm is left out on purpose so it runs off the edge.
   const points = [
-    [-0.6, top - 0.5],
-    [lastX + 0.6, top - 0.5],
-    [-0.6, bottom + 0.5],
-    [lastX + 0.6, bottom + 0.5],
-  ].map(rotate);
+    [-BOX_PAD_X, top - 0.5],
+    [boxRight, top - 0.5],
+    [-BOX_PAD_X, bottom + 0.5],
+    [boxRight, bottom + 0.5],
+  ];
+  if (showHand) points.push([boxRight + 0.7, cy - 1.5], [boxRight + 0.7, cy + 1.4]);
+  const screen = points.map(toScreen);
   if (anchor && !mini) {
-    const b = anchor.button;
-    const [bx, by] = rotate([rowX(b) + badgeSide(b) * BADGE_GAP, b.pos]);
-    points.push([bx - 0.5, by - 0.26], [bx + 0.5, by + 0.26]);
+    const [bx, by] = toScreen([-BADGE_GAP, anchor.button.pos]);
+    screen.push([bx - 0.5, by - 0.26], [bx + 0.5, by + 0.26]);
   }
   const pad = 0.12;
-  const xs = points.map((p) => p[0]);
-  const ys = points.map((p) => p[1]);
+  const xs = screen.map((p) => p[0]);
+  const ys = screen.map((p) => p[1]);
   const minX = Math.min(...xs) - pad;
   const minY = Math.min(...ys) - pad;
   svg.setAttribute(
     'viewBox',
     `${minX} ${minY} ${Math.max(...xs) + pad - minX} ${Math.max(...ys) + pad - minY}`,
   );
-  svg.classList.toggle('mini', !!mini);
 
-  const root = el('g', { transform: `rotate(${tilt} ${cx} ${cy})` });
+  const root = el('g', {
+    transform: matrixAttr(m, cx - m.a * cx - m.c * cy, cy - m.b * cx - m.d * cy),
+  });
   svg.append(root);
-  const upright = `rotate(${-tilt})`;
+  const upright = matrixAttr(inv);
+
+  if (showHand) drawHand(root, boxRight + 0.04, cy);
 
   if (box) {
     root.append(
       el('rect', {
         class: 'box',
-        x: -0.6,
-        y: box.lo - 0.48,
-        width: lastX + 1.2,
-        height: box.hi - box.lo + 0.96,
+        x: -BOX_PAD_X,
+        y: box.lo - BOX_PAD_Y,
+        width: lastX + 2 * BOX_PAD_X,
+        height: box.hi - box.lo + 2 * BOX_PAD_Y,
         rx: 0.25,
+      }),
+    );
+  }
+
+  // Badge always sits left of the inner row; outer-row anchors get a leader line,
+  // which passes through the gap between staggered inner-row buttons.
+  if (anchor && !mini && anchor.button.rowIndex > 0) {
+    root.append(
+      el('line', {
+        class: 'anchor-leader',
+        x1: -BADGE_GAP + 0.3,
+        y1: anchor.button.pos,
+        x2: rowX(anchor.button) - R - 0.1,
+        y2: anchor.button.pos,
       }),
     );
   }
@@ -95,7 +154,7 @@ export function drawKeyboard(svg, layout, view) {
   for (const b of buttons) {
     const isAnchor = anchor?.button.id === b.id;
     const isTarget = target?.button.id === b.id;
-    const g = el('g', { transform: `translate(${rowX(b)} ${b.pos}) ${upright}` });
+    const g = el('g', { transform: `translate(${rowX(b)} ${b.pos})` });
     const classes = ['btn'];
     if (b.id === layout.referenceId) classes.push('ref');
     if (isTarget) classes.push('target');
@@ -105,26 +164,23 @@ export function drawKeyboard(svg, layout, view) {
     if (isAnchor) g.append(el('circle', { class: 'anchor-ring', r: R + (mini ? 0.08 : 0.1) }));
 
     if (isTarget && !mini) {
+      const label = el('g', { transform: upright });
       if (revealed) {
-        g.append(el('text', { class: 'note', y: -0.04 }, spell(noteOf(target), key)));
-        g.append(el('text', { class: 'dir-small', y: 0.27 }, ARROW[target.dir]));
+        label.append(el('text', { class: 'note', y: -0.04 }, spell(noteOf(target), key)));
+        label.append(el('text', { class: 'dir-small', y: 0.27 }, ARROW[target.dir]));
       } else {
-        g.append(el('text', { class: 'dir' }, ARROW[target.dir]));
+        label.append(el('text', { class: 'dir' }, ARROW[target.dir]));
       }
+      g.append(label);
     }
     root.append(g);
   }
 
   if (anchor && !mini) {
-    const b = anchor.button;
-    const side = badgeSide(b);
-    const label =
-      side < 0
-        ? `${spell(noteOf(anchor), key)} ${ARROW[anchor.dir]}`
-        : `${ARROW[anchor.dir]} ${spell(noteOf(anchor), key)}`;
-    const g = el('g', { transform: `translate(${rowX(b) + side * BADGE_GAP} ${b.pos}) ${upright}` });
+    const text = `${spell(noteOf(anchor), key)} ${ARROW[anchor.dir]}`;
+    const g = el('g', { transform: `translate(${-BADGE_GAP} ${anchor.button.pos}) ${upright}` });
     g.append(el('rect', { class: 'anchor-badge', x: -0.48, y: -0.24, width: 0.96, height: 0.48, rx: 0.12 }));
-    g.append(el('text', { class: 'anchor-label' }, label));
+    g.append(el('text', { class: 'anchor-label' }, text));
     root.append(g);
   }
 }
