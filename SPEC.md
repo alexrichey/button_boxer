@@ -160,9 +160,10 @@ Mobile-first, portrait. It should also work on desktop.
 - The rows are vertical, the way you see them while playing: **lowest notes at the
   top**, D row (inner) on the left, C# row (outer) on the right, with the half-button
   stagger.
-- **Tilt (later / optional):** a setting that rotates the keyboard view by a few
-  degrees, to match looking down at the keyboard from the top-right. It should be a
-  single CSS transform on the keyboard container so it's cheap to add.
+- **Tilt:** the keyboard drawing (zoomed view and minimap) is rotated clockwise, so
+  the rows lean right like the view looking down from the player's top-right. The
+  **Tilt** dropdown offers Off / 10° / 20° / 30°, default 20°. Note names, arrows and
+  the anchor badge stay upright. The view is sized to fit the rotated box.
 
 ### 4.2 Zoomed box view
 
@@ -247,7 +248,6 @@ All timings live in one config object.
 - **Ear mode:** play the anchor and the target notes (Web Audio), and you find the
   button + direction.
 - Persisted stats (localStorage), with missed items coming up more often.
-- Tilt/angle view (§4.1).
 - More keys (minor keys, modes), and other tunings via `layout.js`.
 - Octave display.
 

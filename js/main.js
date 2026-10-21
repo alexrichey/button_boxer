@@ -10,6 +10,8 @@ const CONFIG = {
   blitz: { settleMs: 3000, answerMs: 1500 },
 };
 
+const TILTS = [0, 10, 20, 30];
+
 const SETTINGS_KEY = 'button-boxer-settings';
 
 const $ = (id) => document.getElementById(id);
@@ -18,6 +20,7 @@ const els = {
   key: $('key-select'),
   mode: $('mode-select'),
   difficulty: $('difficulty-select'),
+  tilt: $('tilt-select'),
   stage: $('stage'),
   zoom: $('zoom'),
   mini: $('mini'),
@@ -46,7 +49,7 @@ function freshState() {
 // ---------- settings ----------
 
 function loadSettings() {
-  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy' };
+  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy', tilt: '20' };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') };
   } catch {
@@ -196,6 +199,7 @@ function render() {
     revealed: state.revealed,
     tint: state.tint,
     flash: state.flash,
+    tilt: Number(settings.tilt) || 0,
   };
   drawKeyboard(els.zoom, layout, view);
   drawKeyboard(els.mini, layout, { ...view, mini: true });
@@ -291,6 +295,12 @@ function bindInput() {
   els.key.addEventListener('change', onSettingChange('key'));
   els.mode.addEventListener('change', onSettingChange('mode'));
   els.difficulty.addEventListener('change', onSettingChange('difficulty'));
+  els.tilt.addEventListener('change', (e) => {
+    settings.tilt = e.target.value;
+    saveSettings();
+    e.target.blur();
+    render();
+  });
 }
 
 function restart() {
@@ -339,6 +349,10 @@ async function init() {
     Object.entries(DIFFICULTIES).map(([id, d]) => [id, d.label]),
     DIFFICULTIES[settings.difficulty] ? settings.difficulty : 'easy',
   );
+
+  fillSelect(els.tilt, TILTS.map((t) => [String(t), t ? `${t}°` : 'Off']), settings.tilt);
+  if (!els.tilt.value) els.tilt.value = '20';
+  settings.tilt = els.tilt.value;
 
   bindInput();
   restart();

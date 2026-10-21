@@ -33,22 +33,54 @@ const badgeSide = (button) => (button.rowIndex === 0 ? -1 : 1);
  *   tint                       'correct' | 'wrong' | null (reveal colouring)
  *   flash                      animate the target as it appears
  *   mini                       draw the whole keyboard, no labels
+ *   tilt                       degrees to rotate the keyboard clockwise (labels stay upright)
  */
 export function drawKeyboard(svg, layout, view) {
-  const { box, anchor, target, key, revealed, tint, flash, mini } = view;
+  const { box, anchor, target, key, revealed, tint, flash, mini, tilt = 0 } = view;
   svg.replaceChildren();
 
   const lastX = (layout.rows.length - 1) * COL;
   const buttons = mini || !box ? layout.buttons : layout.buttons.filter((b) => inBox(box, b));
   const positions = buttons.map((b) => b.pos);
-  const top = (mini || !box ? Math.min(...positions) : box.lo) - 0.6;
-  const bottom = (mini || !box ? Math.max(...positions) : box.hi) + 0.6;
-  const sideRoom = mini ? 0.6 : BADGE_GAP + 0.6;
-  svg.setAttribute('viewBox', `${-sideRoom} ${top} ${lastX + 2 * sideRoom} ${bottom - top}`);
+  const top = mini || !box ? Math.min(...positions) : box.lo;
+  const bottom = mini || !box ? Math.max(...positions) : box.hi;
+  const cx = lastX / 2;
+  const cy = (top + bottom) / 2;
+
+  // Fit the viewBox to the rotated content: the box outline, plus the anchor badge.
+  const rad = (tilt * Math.PI) / 180;
+  const rotate = ([x, y]) => [
+    cx + (x - cx) * Math.cos(rad) - (y - cy) * Math.sin(rad),
+    cy + (x - cx) * Math.sin(rad) + (y - cy) * Math.cos(rad),
+  ];
+  const points = [
+    [-0.6, top - 0.5],
+    [lastX + 0.6, top - 0.5],
+    [-0.6, bottom + 0.5],
+    [lastX + 0.6, bottom + 0.5],
+  ].map(rotate);
+  if (anchor && !mini) {
+    const b = anchor.button;
+    const [bx, by] = rotate([rowX(b) + badgeSide(b) * BADGE_GAP, b.pos]);
+    points.push([bx - 0.5, by - 0.26], [bx + 0.5, by + 0.26]);
+  }
+  const pad = 0.12;
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const minX = Math.min(...xs) - pad;
+  const minY = Math.min(...ys) - pad;
+  svg.setAttribute(
+    'viewBox',
+    `${minX} ${minY} ${Math.max(...xs) + pad - minX} ${Math.max(...ys) + pad - minY}`,
+  );
   svg.classList.toggle('mini', !!mini);
 
+  const root = el('g', { transform: `rotate(${tilt} ${cx} ${cy})` });
+  svg.append(root);
+  const upright = `rotate(${-tilt})`;
+
   if (box) {
-    svg.append(
+    root.append(
       el('rect', {
         class: 'box',
         x: -0.6,
@@ -63,7 +95,7 @@ export function drawKeyboard(svg, layout, view) {
   for (const b of buttons) {
     const isAnchor = anchor?.button.id === b.id;
     const isTarget = target?.button.id === b.id;
-    const g = el('g', { transform: `translate(${rowX(b)} ${b.pos})` });
+    const g = el('g', { transform: `translate(${rowX(b)} ${b.pos}) ${upright}` });
     const classes = ['btn'];
     if (b.id === layout.referenceId) classes.push('ref');
     if (isTarget) classes.push('target');
@@ -80,7 +112,7 @@ export function drawKeyboard(svg, layout, view) {
         g.append(el('text', { class: 'dir' }, ARROW[target.dir]));
       }
     }
-    svg.append(g);
+    root.append(g);
   }
 
   if (anchor && !mini) {
@@ -90,9 +122,9 @@ export function drawKeyboard(svg, layout, view) {
       side < 0
         ? `${spell(noteOf(anchor), key)} ${ARROW[anchor.dir]}`
         : `${ARROW[anchor.dir]} ${spell(noteOf(anchor), key)}`;
-    const g = el('g', { transform: `translate(${rowX(b) + side * BADGE_GAP} ${b.pos})` });
+    const g = el('g', { transform: `translate(${rowX(b) + side * BADGE_GAP} ${b.pos}) ${upright}` });
     g.append(el('rect', { class: 'anchor-badge', x: -0.48, y: -0.24, width: 0.96, height: 0.48, rx: 0.12 }));
     g.append(el('text', { class: 'anchor-label' }, label));
-    svg.append(g);
+    root.append(g);
   }
 }
