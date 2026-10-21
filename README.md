@@ -23,11 +23,21 @@ python3 -m http.server 8000   # or: npm run serve
 
 Tests (Node 18+, no dependencies): `npm test`
 
+## Photo view and calibration
+
+Layouts can include a photo of the keyboard from the player's view. Button positions
+are calibrated in the layout JSON. To adjust them, switch Mode to **Edit circles**,
+drag or resize the circles, then **Download** (or **Copy JSON**) and replace the layout
+file with the result.
+
 ## Adding a layout
 
 Copy `layouts/cs-d-21.json`, edit the rows (inner row first, buttons lowest pitch
 first, `offset: -0.5` / `0.5` for the half-button stagger), and add it to
 `layouts/index.json`. A Layout dropdown appears once there's more than one.
+For a photo, add the image under `layouts/photos/` (strip its EXIF/GPS metadata
+first) and a `photo` block with a rough point for every button. Then fine-tune the
+points in Edit circles mode.
 
 ## Hosting
 

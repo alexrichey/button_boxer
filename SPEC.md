@@ -59,10 +59,19 @@ position `pos`:
 
 Rendering and the box logic both use `pos`.
 
-### 1.4 Reference button
+### 1.4 Photo calibration
 
-D row button 6 (push D / pull C#), the "middle D," always has a subtle distinct fill
-so you can find your place at a glance. It's separate from the anchor highlight.
+A layout can include a `photo`: an image of the instrument from the player's view
+(`layouts/photos/`, with metadata stripped) and, per button, its centre in photo pixels
+`{x, y}` and a radius `r` in keyboard units. `js/photo.js` fits a homography (perspective
+transform) from flat keyboard coordinates (x = row index, y = pos) to those centres.
+Each button's outline is a circle of radius `r` mapped through it, so it gets the
+photo's perspective, and is shifted so its centre lands on the calibrated point. The
+box outline is the box rectangle mapped the same way.
+
+In the C#/D photo, the **end nearest the camera is the low end** (button 1).
+
+(The middle-D reference fill was removed. The quiz works better without it.)
 
 ---
 
@@ -95,7 +104,7 @@ Anchors and quiz targets are always drawn from the in-play items.
 - Shown with a **thick magenta outline**, plus a magenta **badge with the direction
   arrow and the anchor's note name**. With the rows drawn vertically, "above" the button
   is where the next button sits, so the badge goes **left of the inner row** at the
-  anchor's height (the right side belongs to the thumb). For an outer-row anchor, a
+  anchor's height. For an outer-row anchor, a
   leader line runs from the badge through the gap in the staggered inner row.
 - Stays highlighted for the whole round (all quizzes on that anchor).
 
@@ -161,14 +170,14 @@ Mobile-first, portrait. It should also work on desktop.
 - The rows are vertical, the way you see them while playing: **lowest notes at the
   top**, D row (inner) on the left, C# row (outer) on the right, with the half-button
   stagger.
-- **Tilt:** the keyboard drawing (zoomed view and minimap) is rotated clockwise and
-  then squashed horizontally, so the rows lean right, the box becomes a slanted
-  parallelogram and the buttons become ovals, like the player's view looking down from
-  the top-right. The **Tilt** dropdown offers Off / 10° / 20° / 30°, default 20°. Off
-  draws it flat, with no squash. Note names, arrows and the anchor badge stay upright
-  and undistorted.
-- **Hand:** a cartoon thumb pressed against the outer (right) edge of the box, with the
-  palm and forearm running off the screen, drawn on the same tilted plane.
+- **View** dropdown:
+  - **Photo** (default when the layout has one): the zoomed view is a crop of the photo
+    around the box, with everything outside the box dimmed. The anchor ring, target
+    fill and box are drawn through the perspective transform. Labels stay upright
+    and have a minimum size, so far-away buttons stay readable.
+  - **Drawn 10° / 20° / 30°**: the vector keyboard, rotated clockwise and squashed
+    horizontally so the box is a slanted parallelogram and the buttons are ovals.
+  - **Flat**: the vector keyboard, upright.
 
 ### 4.2 Zoomed box view
 
@@ -223,6 +232,16 @@ There's no self-grading in blitz.
 
 All timings live in one config object.
 
+### 5.3 Edit circles mode
+
+Only offered when the layout has a photo. It shows the photo with every button's
+outline and label. You select a button by tapping it, from the dropdown, or with
+‹ / › (Tab / Shift-Tab). Dragging anywhere moves the selected centre (arrow keys nudge
+1 px, Shift for 10 px). The Size slider (or `[` / `]`) sets its radius, and
+**Size → all** copies it to every button. Edits are saved in the browser and used by
+the quiz right away. **Copy JSON** / **Download** export the whole layout file with
+the new calibration, ready to commit. **Reset** discards the edits.
+
 ---
 
 ## 6. Tech
@@ -239,7 +258,10 @@ All timings live in one config object.
   - `js/layout.js`: loads and checks a layout JSON, computes geometry
   - `js/theory.js`: keys, scales, spelling, in-play filtering
   - `js/quiz.js`: anchor/box/target selection, round state (no DOM)
-  - `js/render.js`: SVG drawing for the box view + minimap
+  - `js/render.js`: SVG drawing for the drawn views + minimap
+  - `js/render-photo.js`: quiz and circle editor drawn over the photo
+  - `js/photo.js`, `js/homography.js`: photo calibration and perspective math
+  - `js/format.js`: JSON export formatting
   - `js/main.js`: wiring, input handling, mode timers
 - Unit tests for the pure modules (`layout`, `theory`, `quiz`) using Node's built-in
   `node --test` (`npm test`). No dependencies.
@@ -261,4 +283,4 @@ All timings live in one config object.
 ## 8. Open questions
 
 Resolved: the chart in §1.2 was checked against the instrument. Also resolved: the box covers N + 1 C# buttons; lowest pitch at the top; blitz answer
-hold is 1.5 s; middle D is D-row button 6.
+hold is 1.5 s.

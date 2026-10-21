@@ -2,6 +2,8 @@ import { buildLayout } from './layout.js';
 import { KEYS, getKey, spell } from './theory.js';
 import { DIFFICULTIES, QUIZZES_PER_ROUND, newRound, noteOf, pickTarget } from './quiz.js';
 import { drawKeyboard, ARROW } from './render.js';
+import { drawPhoto } from './render-photo.js';
+import { formatJson } from './format.js';
 
 const CONFIG = {
   markRevealMs: 800, // answer flash after marking without revealing first
@@ -10,9 +12,17 @@ const CONFIG = {
   blitz: { settleMs: 3000, answerMs: 1500 },
 };
 
-const TILTS = [0, 10, 20, 30];
+// 'photo' uses the layout's photo; numbers are drawn views tilted by that many degrees.
+const VIEWS = [
+  ['photo', 'Photo'],
+  ['20', 'Drawn 20°'],
+  ['10', 'Drawn 10°'],
+  ['30', 'Drawn 30°'],
+  ['0', 'Flat'],
+];
 
 const SETTINGS_KEY = 'button-boxer-settings';
+const PHOTO_EDITS_KEY = (layoutId) => `button-boxer-photo:${layoutId}`;
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -20,27 +30,41 @@ const els = {
   key: $('key-select'),
   mode: $('mode-select'),
   difficulty: $('difficulty-select'),
-  tilt: $('tilt-select'),
+  view: $('view-select'),
   stage: $('stage'),
   zoom: $('zoom'),
   mini: $('mini'),
   answer: $('answer'),
   hint: $('hint'),
   progress: $('progress'),
+  actions: $('actions'),
   wrong: $('mark-wrong'),
   right: $('mark-right'),
   blitzToggle: $('blitz-toggle'),
   error: $('error'),
+  editor: $('editor'),
+  editButton: $('edit-button'),
+  editPrev: $('edit-prev'),
+  editNext: $('edit-next'),
+  editRadius: $('edit-radius'),
+  editRadiusValue: $('edit-radius-value'),
+  editRadiusAll: $('edit-radius-all'),
+  editReset: $('edit-reset'),
+  editCopy: $('edit-copy'),
+  editDownload: $('edit-download'),
 };
 
-const layoutCache = new Map();
+const specCache = new Map(); // layout id -> spec as loaded from its file
 let layoutIndex = [];
 let layout = null;
 let settings = loadSettings();
 
-// Round/quiz state, shared by both modes.
+// Round/quiz state, shared by practice and blitz.
 let state = freshState();
 let blitz = null; // { cancelled } while blitz mode is running
+
+// Circle editor state.
+const editor = { selectedId: null, centeredId: null, drag: null, note: '' };
 
 function freshState() {
   return { round: null, quizIndex: 0, target: null, revealed: false, tint: null, flash: false, locked: false };
@@ -49,7 +73,7 @@ function freshState() {
 // ---------- settings ----------
 
 function loadSettings() {
-  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy', tilt: '20' };
+  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy', view: 'photo' };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') };
   } catch {
@@ -67,8 +91,10 @@ function saveSettings() {
 
 const key = () => getKey(settings.key);
 const difficulty = () => DIFFICULTIES[settings.difficulty] ?? DIFFICULTIES.easy;
+const usePhoto = () => settings.view === 'photo' && !!layout.photo;
+const editing = () => settings.mode === 'edit' && !!layout.photo;
 
-// ---------- layouts ----------
+// ---------- layouts & photo edits ----------
 
 async function fetchJson(path) {
   const res = await fetch(path);
@@ -76,11 +102,46 @@ async function fetchJson(path) {
   return res.json();
 }
 
-async function loadLayout(entry) {
-  if (!layoutCache.has(entry.id)) {
-    layoutCache.set(entry.id, buildLayout(await fetchJson(`layouts/${entry.file}`)));
+async function loadSpec(entry) {
+  if (!specCache.has(entry.id)) specCache.set(entry.id, await fetchJson(`layouts/${entry.file}`));
+  return specCache.get(entry.id);
+}
+
+function loadPhotoEdits(layoutId) {
+  try {
+    return JSON.parse(localStorage.getItem(PHOTO_EDITS_KEY(layoutId)) ?? 'null');
+  } catch {
+    return null;
   }
-  return layoutCache.get(entry.id);
+}
+
+function savePhotoEdits(layoutId, buttons) {
+  try {
+    if (buttons) localStorage.setItem(PHOTO_EDITS_KEY(layoutId), JSON.stringify(buttons));
+    else localStorage.removeItem(PHOTO_EDITS_KEY(layoutId));
+  } catch {
+    // Edits just won't survive a reload.
+  }
+}
+
+// The layout file plus any circle edits saved in this browser.
+function effectiveSpec(layoutId) {
+  const spec = specCache.get(layoutId);
+  const edits = spec.photo && loadPhotoEdits(layoutId);
+  if (!edits) return spec;
+  return { ...spec, photo: { ...spec.photo, buttons: { ...spec.photo.buttons, ...edits } } };
+}
+
+function rebuildLayout() {
+  layout = buildLayout(effectiveSpec(settings.layoutId), 'layouts/');
+}
+
+async function selectLayout(entry) {
+  await loadSpec(entry);
+  settings.layoutId = entry.id;
+  rebuildLayout();
+  editor.selectedId = layout.buttons[0].id;
+  editor.centeredId = null;
 }
 
 // ---------- quiz flow ----------
@@ -188,32 +249,129 @@ function toggleBlitz() {
   }
 }
 
+// ---------- circle editor ----------
+
+function editedButtons() {
+  const out = {};
+  for (const [id, p] of layout.photo.points) out[id] = { x: Math.round(p.x), y: Math.round(p.y), r: round3(p.r) };
+  return out;
+}
+
+const round3 = (v) => Math.round(v * 1000) / 1000;
+
+function applyEdit(change) {
+  const buttons = editedButtons();
+  change(buttons);
+  savePhotoEdits(settings.layoutId, buttons);
+  rebuildLayout();
+  render();
+}
+
+function moveSelected(dx, dy) {
+  applyEdit((buttons) => {
+    const p = buttons[editor.selectedId];
+    p.x = Math.round(p.x + dx);
+    p.y = Math.round(p.y + dy);
+  });
+}
+
+function selectButton(id) {
+  editor.selectedId = id;
+  editor.note = '';
+  render();
+}
+
+function stepSelection(delta) {
+  const ids = layout.buttons.map((b) => b.id);
+  const i = ids.indexOf(editor.selectedId);
+  selectButton(ids[(i + delta + ids.length) % ids.length]);
+}
+
+function exportSpec() {
+  const spec = specCache.get(settings.layoutId);
+  return formatJson({ ...spec, photo: { ...spec.photo, buttons: editedButtons() } }) + '\n';
+}
+
+async function copyJson() {
+  try {
+    await navigator.clipboard.writeText(exportSpec());
+    editor.note = 'Copied layout JSON to the clipboard';
+  } catch {
+    editor.note = "Couldn't copy here; use Download instead";
+  }
+  render();
+}
+
+function downloadJson() {
+  const entry = layoutIndex.find((l) => l.id === settings.layoutId);
+  const url = URL.createObjectURL(new Blob([exportSpec()], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = entry.file;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function resetEdits() {
+  if (!confirm('Discard your circle edits and go back to the layout file?')) return;
+  savePhotoEdits(settings.layoutId, null);
+  rebuildLayout();
+  editor.centeredId = null;
+  editor.note = 'Reset to the layout file';
+  render();
+}
+
+// Converts a screen-pixel distance into photo pixels for the zoomed view.
+function screenToPhotoScale() {
+  const ctm = els.zoom.getScreenCTM();
+  return ctm ? 1 / ctm.a : 1;
+}
+
 // ---------- rendering ----------
 
 function render() {
+  const edit = editing();
   const view = {
-    box: state.round?.box,
-    anchor: state.round?.anchor,
-    target: state.target,
+    box: edit ? null : state.round?.box,
+    anchor: edit ? null : state.round?.anchor,
+    target: edit ? null : state.target,
     key: key(),
     revealed: state.revealed,
     tint: state.tint,
     flash: state.flash,
-    tilt: Number(settings.tilt) || 0,
+    tilt: Number(settings.view) || 0,
   };
-  drawKeyboard(els.zoom, layout, view);
-  drawKeyboard(els.mini, layout, { ...view, mini: true });
+
+  if (edit || usePhoto()) {
+    // Only re-centre the editor's zoom when the selection changes, so dragging is stable.
+    const editView = edit && {
+      selectedId: editor.selectedId,
+      keepView: editor.centeredId === editor.selectedId,
+    };
+    drawPhoto(els.zoom, layout, { ...view, edit: editView });
+    drawPhoto(els.mini, layout, { ...view, mini: true, edit: edit && { selectedId: editor.selectedId } });
+    if (edit) editor.centeredId = editor.selectedId;
+  } else {
+    drawKeyboard(els.zoom, layout, view);
+    drawKeyboard(els.mini, layout, { ...view, mini: true });
+  }
 
   const practice = settings.mode === 'practice';
   els.wrong.hidden = !practice;
   els.right.hidden = !practice;
-  els.blitzToggle.hidden = practice;
+  els.blitzToggle.hidden = settings.mode !== 'blitz';
   els.blitzToggle.textContent = blitz ? 'Stop' : 'Start';
+  els.progress.hidden = edit;
+  els.editor.hidden = !edit;
+  els.difficulty.closest('label').hidden = edit;
+  els.key.closest('label').hidden = edit;
+  els.view.closest('label').hidden = edit;
+  els.stage.classList.toggle('editing', edit);
 
   els.answer.className = 'answer' + (state.tint ? ` ${state.tint}` : '');
-  if (state.target && state.revealed) {
+  els.answer.replaceChildren();
+  if (!edit && state.target && state.revealed) {
     const t = state.target;
-    els.answer.innerHTML = '';
     const note = document.createElement('span');
     note.className = 'answer-note';
     note.textContent = spell(noteOf(t), key());
@@ -221,11 +379,12 @@ function render() {
     dir.className = 'answer-dir';
     dir.textContent = `${ARROW[t.dir]} ${t.dir}`;
     els.answer.append(note, dir);
-  } else {
-    els.answer.textContent = '';
   }
 
-  if (practice) {
+  if (edit) {
+    renderEditorPanel();
+    els.hint.textContent = editor.note || 'Drag to move the circle · tap a circle to select it';
+  } else if (practice) {
     els.hint.textContent = state.revealed
       ? 'Swipe → if you got it, ← if not'
       : 'Tap to reveal · or just swipe → / ←';
@@ -242,22 +401,52 @@ function render() {
   state.flash = false;
 }
 
+function renderEditorPanel() {
+  els.editButton.value = editor.selectedId;
+  const r = layout.photo.points.get(editor.selectedId).r;
+  els.editRadius.value = r;
+  els.editRadiusValue.textContent = r.toFixed(3);
+}
+
 // ---------- input ----------
 
 function bindInput() {
   let start = null;
 
   els.stage.addEventListener('pointerdown', (e) => {
-    start = { x: e.clientX, y: e.clientY };
+    start = { x: e.clientX, y: e.clientY, targetId: e.target.closest?.('[data-id]')?.dataset.id };
+    if (editing()) {
+      const p = layout.photo.points.get(editor.selectedId);
+      editor.drag = { x0: p.x, y0: p.y, scale: screenToPhotoScale(), moved: false };
+      els.stage.setPointerCapture(e.pointerId);
+    }
+  });
+  els.stage.addEventListener('pointermove', (e) => {
+    if (!start || !editor.drag || !editing()) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (!editor.drag.moved && Math.hypot(dx, dy) <= CONFIG.tapSlopPx) return;
+    editor.drag.moved = true;
+    const { x0, y0, scale } = editor.drag;
+    const p = layout.photo.points.get(editor.selectedId);
+    moveSelected(x0 + dx * scale - p.x, y0 + dy * scale - p.y);
   });
   els.stage.addEventListener('pointercancel', () => {
     start = null;
+    editor.drag = null;
   });
   els.stage.addEventListener('pointerup', (e) => {
     if (!start) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
+    const { targetId } = start;
     start = null;
+    if (editing()) {
+      const moved = editor.drag?.moved;
+      editor.drag = null;
+      if (!moved && targetId && targetId !== editor.selectedId) selectButton(targetId);
+      return;
+    }
     if (Math.abs(dx) >= CONFIG.swipeThresholdPx && Math.abs(dx) > Math.abs(dy)) {
       mark(dx > 0);
     } else if (Math.hypot(dx, dy) <= CONFIG.tapSlopPx && settings.mode === 'practice') {
@@ -269,8 +458,46 @@ function bindInput() {
   els.right.addEventListener('click', () => mark(true));
   els.blitzToggle.addEventListener('click', toggleBlitz);
 
+  els.editButton.addEventListener('change', (e) => selectButton(e.target.value));
+  els.editPrev.addEventListener('click', () => stepSelection(-1));
+  els.editNext.addEventListener('click', () => stepSelection(1));
+  els.editRadius.addEventListener('input', (e) =>
+    applyEdit((buttons) => {
+      buttons[editor.selectedId].r = round3(Number(e.target.value));
+    }),
+  );
+  els.editRadiusAll.addEventListener('click', () => {
+    const r = layout.photo.points.get(editor.selectedId).r;
+    applyEdit((buttons) => Object.values(buttons).forEach((p) => (p.r = round3(r))));
+    editor.note = `Size ${r.toFixed(3)} applied to every circle`;
+    render();
+  });
+  els.editReset.addEventListener('click', resetEdits);
+  els.editCopy.addEventListener('click', copyJson);
+  els.editDownload.addEventListener('click', downloadJson);
+
   document.addEventListener('keydown', (e) => {
-    if (e.target instanceof HTMLSelectElement || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if (t instanceof HTMLSelectElement || t instanceof HTMLInputElement) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (editing()) {
+      const step = e.shiftKey ? 10 : 1;
+      const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      if (moves[e.key]) {
+        e.preventDefault();
+        moveSelected(...moves[e.key]);
+      } else if (e.key === '[' || e.key === ']') {
+        const delta = e.key === ']' ? 0.005 : -0.005;
+        applyEdit((buttons) => {
+          const p = buttons[editor.selectedId];
+          p.r = round3(Math.max(0.1, p.r + delta));
+        });
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        stepSelection(e.shiftKey ? -1 : 1);
+      }
+      return;
+    }
     if (e.key === ' ') {
       e.preventDefault();
       if (settings.mode === 'practice') reveal();
@@ -288,24 +515,25 @@ function bindInput() {
     settings[name] = e.target.value;
     saveSettings();
     e.target.blur();
-    if (name === 'layoutId') layout = await loadLayout(layoutIndex.find((l) => l.id === settings.layoutId));
-    restart();
+    if (name === 'layoutId') {
+      await selectLayout(layoutIndex.find((l) => l.id === settings.layoutId));
+      fillLayoutDependentSelects();
+    }
+    if (name === 'view') render();
+    else restart();
   };
   els.layout.addEventListener('change', onSettingChange('layoutId'));
   els.key.addEventListener('change', onSettingChange('key'));
   els.mode.addEventListener('change', onSettingChange('mode'));
   els.difficulty.addEventListener('change', onSettingChange('difficulty'));
-  els.tilt.addEventListener('change', (e) => {
-    settings.tilt = e.target.value;
-    saveSettings();
-    e.target.blur();
-    render();
-  });
+  els.view.addEventListener('change', onSettingChange('view'));
 }
 
 function restart() {
   stopBlitz();
   state = freshState();
+  editor.note = '';
+  editor.centeredId = null;
   if (settings.mode === 'practice') startPractice();
   else render();
 }
@@ -322,14 +550,26 @@ function fillSelect(select, options, value) {
     }),
   );
   select.value = value;
+  if (select.value !== String(value) && options.length) select.value = options[0][0];
+  return select.value;
+}
+
+// Options that depend on whether the current layout has a photo.
+function fillLayoutDependentSelects() {
+  const hasPhoto = !!layout.photo;
+  settings.view = fillSelect(els.view, VIEWS.filter(([v]) => hasPhoto || v !== 'photo'), settings.view);
+  const modes = [['practice', 'Practice'], ['blitz', 'Blitz']];
+  if (hasPhoto) modes.push(['edit', 'Edit circles']);
+  settings.mode = fillSelect(els.mode, modes, settings.mode);
+  fillSelect(els.editButton, layout.buttons.map((b) => [b.id, `${b.row}${b.number}`]), editor.selectedId);
 }
 
 async function init() {
   try {
     layoutIndex = await fetchJson('layouts/index.json');
     const entry = layoutIndex.find((l) => l.id === settings.layoutId) ?? layoutIndex[0];
-    settings.layoutId = entry.id;
-    layout = await loadLayout(entry);
+    await Promise.all(layoutIndex.map(loadSpec));
+    await selectLayout(entry);
   } catch (err) {
     els.error.hidden = false;
     els.error.textContent =
@@ -338,21 +578,15 @@ async function init() {
     return;
   }
 
-  // Layout names come from each file; load them all for the dropdown.
-  const names = await Promise.all(layoutIndex.map(async (l) => [l.id, (await loadLayout(l)).name]));
-  fillSelect(els.layout, names, settings.layoutId);
+  fillSelect(els.layout, layoutIndex.map((l) => [l.id, specCache.get(l.id).name ?? l.id]), settings.layoutId);
   els.layout.closest('label').hidden = layoutIndex.length < 2;
   fillSelect(els.key, KEYS.map((k) => [k.name, `${k.name} major`]), key().name);
-  fillSelect(els.mode, [['practice', 'Practice'], ['blitz', 'Blitz']], settings.mode);
-  fillSelect(
+  settings.difficulty = fillSelect(
     els.difficulty,
     Object.entries(DIFFICULTIES).map(([id, d]) => [id, d.label]),
-    DIFFICULTIES[settings.difficulty] ? settings.difficulty : 'easy',
+    settings.difficulty,
   );
-
-  fillSelect(els.tilt, TILTS.map((t) => [String(t), t ? `${t}°` : 'Off']), settings.tilt);
-  if (!els.tilt.value) els.tilt.value = '20';
-  settings.tilt = els.tilt.value;
+  fillLayoutDependentSelects();
 
   bindInput();
   restart();

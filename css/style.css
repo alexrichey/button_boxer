@@ -7,7 +7,6 @@
 
   --btn-fill: #fbfaf7;
   --btn-stroke: #3a3631;
-  --ref-fill: #e4dccb;
   --box-stroke: #8f877b;
   --anchor: #ff1f8f;
   --anchor-text: #ffffff;
@@ -15,10 +14,6 @@
   --target-text: #ffffff;
   --correct: #16a34a;
   --wrong: #dc2626;
-  --skin: #f2c9a5;
-  --skin-shade: #d9a47c;
-  --skin-line: #9c6b4a;
-  --nail: #fbe3d3;
 
   color-scheme: light dark;
 }
@@ -33,15 +28,10 @@
 
     --btn-fill: #2a2825;
     --btn-stroke: #8c857b;
-    --ref-fill: #4a4236;
     --box-stroke: #6f685e;
     --anchor: #ff4fa7;
     --target: #3b82f6;
-    --skin: #c99a76;
-    --skin-shade: #a87a58;
-    --skin-line: #6e4a33;
-    --nail: #e3c0aa;
-  }
+          }
 }
 
 * {
@@ -147,10 +137,6 @@ select {
   stroke-width: 0.04;
 }
 
-.btn.ref {
-  fill: var(--ref-fill);
-}
-
 .btn.target {
   fill: var(--target);
   stroke: var(--target);
@@ -203,43 +189,6 @@ select {
   stroke-linecap: round;
 }
 
-.hand .arm-outline {
-  stroke: var(--skin-line);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-}
-
-.hand .arm {
-  stroke: var(--skin-shade);
-  stroke-width: 2.42;
-  stroke-linecap: round;
-}
-
-.hand .palm {
-  fill: var(--skin-shade);
-  stroke: var(--skin-line);
-  stroke-width: 0.04;
-}
-
-.hand .thumb {
-  fill: var(--skin);
-  stroke: var(--skin-line);
-  stroke-width: 0.04;
-}
-
-.hand .nail {
-  fill: var(--nail);
-  stroke: var(--skin-line);
-  stroke-width: 0.025;
-}
-
-.hand .knuckle {
-  fill: none;
-  stroke: var(--skin-line);
-  stroke-width: 0.03;
-  stroke-linecap: round;
-}
-
 .box {
   fill: none;
   stroke: var(--box-stroke);
@@ -285,6 +234,144 @@ text {
   font-size: 0.28px;
   font-weight: 700;
   fill: var(--anchor-text);
+}
+
+/* photo view */
+
+.photo-dim {
+  fill: rgb(0 0 0 / 0.5);
+}
+
+.photo-box {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.mini .photo-box {
+  stroke: var(--anchor);
+  stroke-dasharray: none;
+}
+
+.photo-target {
+  fill: var(--target);
+  stroke: #ffffff;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.photo-target.correct {
+  fill: var(--correct);
+}
+
+.photo-target.wrong {
+  fill: var(--wrong);
+}
+
+.photo-target.flash {
+  animation: flash 0.5s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.photo-anchor {
+  fill: none;
+  stroke: var(--anchor);
+  stroke-width: 5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.mini .photo-anchor {
+  stroke-width: 2px;
+}
+
+.photo-leader {
+  stroke: var(--anchor);
+  stroke-width: 3px;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* circle editor */
+
+.stage.editing {
+  cursor: move;
+}
+
+.edit-outline {
+  fill: rgb(255 255 255 / 0.08);
+  stroke: #00e5ff;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.edit-outline.selected {
+  fill: rgb(255 31 143 / 0.18);
+  stroke: var(--anchor);
+  stroke-width: 3px;
+}
+
+.edit-label {
+  fill: #ffffff;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgb(0 0 0 / 0.7);
+  stroke-width: 3px;
+}
+
+.edit-cross {
+  stroke: var(--anchor);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.editor[hidden] {
+  display: none;
+}
+
+.editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.editor button {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.editor input[type='range'] {
+  width: 160px;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5em;
+  text-align: left;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 /* ---------- answer panel ---------- */

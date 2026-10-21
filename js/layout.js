@@ -6,8 +6,10 @@
 // row with offset 0).
 
 import { toPitchClass } from './theory.js';
+import { buildPhoto } from './photo.js';
 
-export function buildLayout(spec) {
+// `base` is the URL prefix for files the layout references (e.g. its photo).
+export function buildLayout(spec, base = '') {
   if (!Array.isArray(spec.rows) || spec.rows.length === 0) {
     throw new Error(`Layout "${spec.id}" has no rows`);
   }
@@ -23,6 +25,7 @@ export function buildLayout(spec) {
         row: row.id,
         rowIndex,
         number: i + 1,
+        x: rowIndex, // flat keyboard coordinates: x = row, y = pos
         pos: i + 1 + offset,
         push: toPitchClass(b.push),
         pull: toPitchClass(b.pull),
@@ -32,15 +35,14 @@ export function buildLayout(spec) {
   });
 
   const boxRow = rows.find((r) => r.id === spec.boxRow) ?? rows[0];
-  const ref = spec.reference;
-  const referenceId = ref ? `${ref.row}:${ref.button}` : null;
+  const buttons = rows.flatMap((r) => r.buttons);
 
   return {
     id: spec.id,
     name: spec.name ?? spec.id,
     rows,
-    buttons: rows.flatMap((r) => r.buttons),
+    buttons,
     boxRow,
-    referenceId,
+    photo: spec.photo ? buildPhoto(spec.id, spec.photo, buttons, base) : null,
   };
 }

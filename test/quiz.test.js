@@ -45,7 +45,6 @@ test('C#/D layout shape', () => {
     [['D', 10], ['C#', 11]],
   );
   assert.equal(csd.boxRow.id, 'D');
-  assert.equal(csd.referenceId, 'D:6');
   const d6 = csd.buttons.find((b) => b.id === 'D:6');
   assert.equal(spell(d6.push, getKey('D')), 'D');
   assert.equal(spell(d6.pull, getKey('D')), 'C#');

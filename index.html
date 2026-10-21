@@ -14,7 +14,7 @@
         <label>Key <select id="key-select"></select></label>
         <label>Mode <select id="mode-select"></select></label>
         <label>Level <select id="difficulty-select"></select></label>
-        <label>Tilt <select id="tilt-select"></select></label>
+        <label>View <select id="view-select"></select></label>
       </div>
       <svg id="mini" class="minimap" aria-label="Whole keyboard"></svg>
     </header>
@@ -28,7 +28,24 @@
     <section class="panel">
       <div id="answer" class="answer" aria-live="polite"></div>
       <p id="hint" class="hint"></p>
-      <div class="actions">
+      <div id="editor" class="editor" hidden>
+        <div class="editor-row">
+          <button id="edit-prev" aria-label="Previous button">‹</button>
+          <select id="edit-button" aria-label="Button"></select>
+          <button id="edit-next" aria-label="Next button">›</button>
+        </div>
+        <label class="editor-row">
+          Size <input id="edit-radius" type="range" min="0.2" max="0.7" step="0.005" />
+          <span id="edit-radius-value" class="mono"></span>
+        </label>
+        <div class="editor-row">
+          <button id="edit-radius-all">Size → all</button>
+          <button id="edit-reset">Reset</button>
+          <button id="edit-copy">Copy JSON</button>
+          <button id="edit-download">Download</button>
+        </div>
+      </div>
+      <div id="actions" class="actions">
         <button id="mark-wrong" class="mark wrong" aria-label="Wrong">✗</button>
         <span id="progress" class="progress"></span>
         <button id="mark-right" class="mark right" aria-label="Right">✓</button>

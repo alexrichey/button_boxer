@@ -13,14 +13,14 @@ import { inBox, noteOf } from './quiz.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const COL = 1.0; // horizontal distance between rows
 const R = 0.42; // button radius
-const BADGE_GAP = 1.15; // anchor badge distance left of the inner row
+export const BADGE_GAP = 1.15; // anchor badge distance left of the inner row
 const BOX_PAD_X = 0.6;
 const BOX_PAD_Y = 0.48;
 const SQUASH = 0.72; // horizontal foreshortening when tilted
 
 export const ARROW = { pull: '←', push: '→' };
 
-function el(name, attrs = {}, text) {
+export function el(name, attrs = {}, text) {
   const node = document.createElementNS(SVG_NS, name);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
   if (text != null) node.textContent = text;
@@ -44,21 +44,6 @@ function viewMatrix(tilt) {
 
 const matrixAttr = ({ a, b, c, d }, e = 0, f = 0) => `matrix(${a} ${b} ${c} ${d} ${e} ${f})`;
 
-// A cartoon thumb pressed against the outer edge of the box; palm and forearm run off-screen.
-function drawHand(parent, x, cy) {
-  const g = el('g', { class: 'hand' });
-  const px = x + 1.9;
-  const py = cy + 0.9;
-  const arm = { x1: px, y1: py, x2: px + 9, y2: py + 9 };
-  g.append(el('line', { class: 'arm-outline', ...arm }));
-  g.append(el('line', { class: 'arm', ...arm }));
-  g.append(el('ellipse', { class: 'palm', cx: px, cy: py, rx: 1.45, ry: 2.1 }));
-  g.append(el('rect', { class: 'thumb', x, y: cy - 1.5, width: 0.66, height: 2.9, rx: 0.33 }));
-  g.append(el('rect', { class: 'nail', x: x + 0.13, y: cy - 1.36, width: 0.4, height: 0.5, rx: 0.16 }));
-  g.append(el('path', { class: 'knuckle', d: `M ${x + 0.16} ${cy + 0.15} q 0.17 0.09 0.34 0` }));
-  parent.append(g);
-}
-
 /**
  * @param {SVGSVGElement} svg
  * @param {object} layout  from buildLayout
@@ -67,7 +52,7 @@ function drawHand(parent, x, cy) {
  *   revealed                   show the target's note
  *   tint                       'correct' | 'wrong' | null (reveal colouring)
  *   flash                      animate the target as it appears
- *   mini                       draw the whole keyboard, no labels or hand
+ *   mini                       draw the whole keyboard, no labels
  *   tilt                       degrees to tilt the keyboard clockwise (0 = flat, no squash)
  */
 export function drawKeyboard(svg, layout, view) {
@@ -84,7 +69,6 @@ export function drawKeyboard(svg, layout, view) {
   const cx = lastX / 2;
   const cy = (top + bottom) / 2;
   const boxRight = lastX + BOX_PAD_X;
-  const showHand = !mini && !!box;
 
   const { m, inv } = viewMatrix(tilt);
   const toScreen = ([x, y]) => [
@@ -92,15 +76,13 @@ export function drawKeyboard(svg, layout, view) {
     cy + m.b * (x - cx) + m.d * (y - cy),
   ];
 
-  // Fit the viewBox to the transformed content: box outline, thumb, anchor badge.
-  // The palm is left out on purpose so it runs off the edge.
+  // Fit the viewBox to the transformed content: box outline and anchor badge.
   const points = [
     [-BOX_PAD_X, top - 0.5],
     [boxRight, top - 0.5],
     [-BOX_PAD_X, bottom + 0.5],
     [boxRight, bottom + 0.5],
   ];
-  if (showHand) points.push([boxRight + 0.7, cy - 1.5], [boxRight + 0.7, cy + 1.4]);
   const screen = points.map(toScreen);
   if (anchor && !mini) {
     const [bx, by] = toScreen([-BADGE_GAP, anchor.button.pos]);
@@ -122,8 +104,6 @@ export function drawKeyboard(svg, layout, view) {
   svg.append(root);
   const upright = matrixAttr(inv);
 
-  if (showHand) drawHand(root, boxRight + 0.04, cy);
-
   if (box) {
     root.append(
       el('rect', {
@@ -137,7 +117,7 @@ export function drawKeyboard(svg, layout, view) {
     );
   }
 
-  // Badge always sits left of the inner row; outer-row anchors get a leader line,
+  // Badge sits left of the inner row; outer-row anchors get a leader line,
   // which passes through the gap between staggered inner-row buttons.
   if (anchor && !mini && anchor.button.rowIndex > 0) {
     root.append(
@@ -156,7 +136,6 @@ export function drawKeyboard(svg, layout, view) {
     const isTarget = target?.button.id === b.id;
     const g = el('g', { transform: `translate(${rowX(b)} ${b.pos})` });
     const classes = ['btn'];
-    if (b.id === layout.referenceId) classes.push('ref');
     if (isTarget) classes.push('target');
     if (isTarget && revealed && tint) classes.push(tint);
     if (isTarget && flash) classes.push('flash');
