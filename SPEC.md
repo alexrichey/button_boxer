@@ -100,7 +100,11 @@ Anchors and quiz targets are always drawn from the in-play items.
 
 ### 3.1 Anchor
 
-- A random in-play `(button, direction)`, on either row.
+- Restricted by the layout's `anchorNotes` (C#/D: `["D"]`). That means the three push
+  Ds on the D row: **low D (button 3), middle D (6), high D (9)**. These are used in
+  every key, including E and B major where D isn't in the scale, because the anchor is
+  a reference point, not a quiz answer. Layouts without `anchorNotes` allow any in-play
+  item.
 - Shown with a **thick magenta outline**, plus a magenta **badge with the direction
   arrow and the anchor's note name**. With the rows drawn vertically, "above" the button
   is where the next button sits, so the badge goes **left of the inner row** at the

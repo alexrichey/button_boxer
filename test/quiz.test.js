@@ -9,6 +9,7 @@ import {
   boxesContaining,
   inBox,
   inPlayItems,
+  anchorItems,
   newRound,
   noteOf,
   pickTarget,
@@ -114,7 +115,7 @@ test('rounds: anchor in box, targets in box, in key, never the anchor', () => {
       for (let i = 0; i < 50; i++) {
         const round = newRound(csd, key, size, rng);
         assert.ok(inBox(round.box, round.anchor.button));
-        assert.ok(scale.has(noteOf(round.anchor)));
+        assert.equal(noteOf(round.anchor), 2, 'anchor is always a D');
         assert.ok(round.targets.length >= 2);
         for (const t of round.targets) {
           assert.ok(inBox(round.box, t.button));
@@ -123,6 +124,29 @@ test('rounds: anchor in box, targets in box, in key, never the anchor', () => {
         }
       }
     }
+  }
+});
+
+test('anchors are the three push Ds: low, middle, high', () => {
+  for (const name of ['F', 'D', 'E', 'B']) {
+    assert.deepEqual(
+      anchorItems(csd, getKey(name)).map((a) => `${a.button.id} ${a.dir}`),
+      ['D:3 push', 'D:6 push', 'D:9 push'],
+    );
+  }
+});
+
+test('without anchorNotes, any in-key item can anchor', () => {
+  const free = { ...csd, anchorNotes: null };
+  assert.equal(anchorItems(free, getKey('D')).length, inPlayItems(csd, getKey('D')).length);
+});
+
+test('every D anchor gets used across rounds, on every level', () => {
+  const rng = seeded(3);
+  for (const size of [5, 7, 10]) {
+    const seen = new Set();
+    for (let i = 0; i < 100; i++) seen.add(newRound(csd, getKey('D'), size, rng).anchor.button.id);
+    assert.deepEqual([...seen].sort(), ['D:3', 'D:6', 'D:9']);
   }
 });
 

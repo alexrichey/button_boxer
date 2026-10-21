@@ -37,12 +37,16 @@ export function buildLayout(spec, base = '') {
   const boxRow = rows.find((r) => r.id === spec.boxRow) ?? rows[0];
   const buttons = rows.flatMap((r) => r.buttons);
 
+  // Optional: restrict anchors to these notes (e.g. ["D"] for the home row's D buttons).
+  const anchorNotes = spec.anchorNotes?.length ? new Set(spec.anchorNotes.map(toPitchClass)) : null;
+
   return {
     id: spec.id,
     name: spec.name ?? spec.id,
     rows,
     buttons,
     boxRow,
+    anchorNotes,
     photo: spec.photo ? buildPhoto(spec.id, spec.photo, buttons, base) : null,
   };
 }

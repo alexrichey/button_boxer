@@ -63,15 +63,27 @@ export function pick(items, rng = Math.random) {
   return items[Math.floor(rng() * items.length)];
 }
 
+// Items that can serve as the anchor. If the layout names anchor notes (e.g. ["D"]),
+// any button/direction sounding one of them qualifies, whatever the key: the anchor
+// is a reference point, not a quiz answer. Otherwise any in-key item can anchor.
+export function anchorItems(layout, key) {
+  if (!layout.anchorNotes) return inPlayItems(layout, key);
+  return layout.buttons.flatMap((button) =>
+    DIRECTIONS.filter((dir) => layout.anchorNotes.has(button[dir])).map((dir) => ({ button, dir })),
+  );
+}
+
 // Picks an anchor, a box around it (anchor lands anywhere in the box), and the
 // quiz targets available inside that box.
 export function newRound(layout, key, boxSize, rng = Math.random) {
   const size = clampBoxSize(layout, boxSize);
   const items = inPlayItems(layout, key);
   if (items.length === 0) throw new Error(`No notes of ${key.name} major on this layout`);
+  const anchors = anchorItems(layout, key);
+  if (anchors.length === 0) throw new Error('No buttons sound the layout\'s anchor notes');
 
   for (let attempt = 0; attempt < MAX_ROUND_ATTEMPTS; attempt++) {
-    const anchor = pick(items, rng);
+    const anchor = pick(anchors, rng);
     const boxes = boxesContaining(layout, size, anchor.button);
     if (boxes.length === 0) continue;
     const box = pick(boxes, rng);

@@ -1,5 +1,5 @@
 // Pretty-prints JSON like the hand-written layout files: two-space indent, with
-// small "leaf" objects (only primitive values) kept on one line.
+// small "leaf" objects and arrays (only primitive values) kept on one line.
 
 const isLeafObject = (v) =>
   v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every((x) => x === null || typeof x !== 'object');
@@ -13,6 +13,7 @@ export function formatJson(value, indent = '') {
   const inner = indent + '  ';
   if (Array.isArray(value)) {
     if (!value.length) return '[]';
+    if (value.every((x) => x === null || typeof x !== 'object')) return `[${value.map((x) => JSON.stringify(x)).join(', ')}]`;
     return `[\n${value.map((v) => inner + formatJson(v, inner)).join(',\n')}\n${indent}]`;
   }
   const entries = Object.entries(value).map(([k, v]) => `${inner}${JSON.stringify(k)}: ${formatJson(v, inner)}`);

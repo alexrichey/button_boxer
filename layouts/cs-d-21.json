@@ -39,6 +39,7 @@
     }
   ],
   "boxRow": "D",
+  "anchorNotes": ["D"],
   "photo": {
     "src": "photos/cs-d-21.jpg",
     "width": 1500,
