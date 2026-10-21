@@ -1,0 +1,43 @@
+{
+  "id": "cs-d-21",
+  "name": "C#/D — 21 button",
+  "rows": [
+    {
+      "id": "D",
+      "label": "D row (inner)",
+      "offset": 0,
+      "buttons": [
+        { "push": "F#", "pull": "B" },
+        { "push": "A", "pull": "C#" },
+        { "push": "D", "pull": "E" },
+        { "push": "F#", "pull": "G" },
+        { "push": "A", "pull": "B" },
+        { "push": "D", "pull": "C#" },
+        { "push": "F#", "pull": "E" },
+        { "push": "A", "pull": "G" },
+        { "push": "D", "pull": "B" },
+        { "push": "F#", "pull": "C#" }
+      ]
+    },
+    {
+      "id": "C#",
+      "label": "C# row (outer)",
+      "offset": -0.5,
+      "buttons": [
+        { "push": "F", "pull": "A#" },
+        { "push": "G#", "pull": "C" },
+        { "push": "C#", "pull": "D#" },
+        { "push": "F", "pull": "F#" },
+        { "push": "G#", "pull": "A#" },
+        { "push": "C#", "pull": "C" },
+        { "push": "F", "pull": "D#" },
+        { "push": "G#", "pull": "F#" },
+        { "push": "C#", "pull": "A#" },
+        { "push": "F", "pull": "C" },
+        { "push": "G#", "pull": "D#" }
+      ]
+    }
+  ],
+  "boxRow": "D",
+  "reference": { "row": "D", "button": 6 }
+}

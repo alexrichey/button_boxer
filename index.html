@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Button Boxer</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <header class="top">
+      <div class="controls">
+        <label hidden>Layout <select id="layout-select"></select></label>
+        <label>Key <select id="key-select"></select></label>
+        <label>Mode <select id="mode-select"></select></label>
+        <label>Level <select id="difficulty-select"></select></label>
+      </div>
+      <svg id="mini" class="minimap" aria-label="Whole keyboard"></svg>
+    </header>
+
+    <p id="error" class="error" hidden></p>
+
+    <main id="stage" class="stage">
+      <svg id="zoom" class="zoom" aria-label="Hand-span view"></svg>
+    </main>
+
+    <section class="panel">
+      <div id="answer" class="answer" aria-live="polite"></div>
+      <p id="hint" class="hint"></p>
+      <div class="actions">
+        <button id="mark-wrong" class="mark wrong" aria-label="Wrong">✗</button>
+        <span id="progress" class="progress"></span>
+        <button id="mark-right" class="mark right" aria-label="Right">✓</button>
+        <button id="blitz-toggle" class="blitz-toggle" hidden>Start</button>
+      </div>
+    </section>
+  </body>
+</html>
