@@ -18,7 +18,7 @@ const BOX_PAD_X = 0.6;
 const BOX_PAD_Y = 0.48;
 const SQUASH = 0.72; // horizontal foreshortening when tilted
 
-export const ARROW = { pull: '←', push: '→' };
+export const ARROW = { pull: '→', push: '←' };
 
 export function el(name, attrs = {}, text) {
   const node = document.createElementNS(SVG_NS, name);

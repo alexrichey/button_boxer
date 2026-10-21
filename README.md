@@ -2,7 +2,7 @@
 
 A quizzer for memorizing the treble buttons of a two-row half-step button accordion
 (currently a 21-button C#/D). It highlights an anchor button inside a hand-span box,
-lights up a nearby button with a bellows direction (← pull, → push), and you name the note.
+lights up a nearby button with a bellows direction (→ pull, ← push), and you name the note.
 
 - **Practice:** tap to reveal, then swipe → if you got it right or ← if you didn't. You can
   swipe without revealing; the answer flashes briefly. On desktop: Space reveals, ←/→

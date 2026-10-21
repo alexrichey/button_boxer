@@ -110,8 +110,8 @@ Anchors and quiz targets are always drawn from the in-play items.
 
 ### 3.2 Direction arrows
 
-- **← (left arrow) = pull**
-- **→ (right arrow) = push**
+- **→ (right arrow) = pull**
+- **← (left arrow) = push**
 
 The same arrows are used for both the anchor and the quiz button.
 
