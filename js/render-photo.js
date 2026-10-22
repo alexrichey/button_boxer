@@ -3,8 +3,8 @@
 // at any zoom, and text is sized relative to the button it labels.
 
 import { spell } from './theory.js';
-import { inBox, noteOf } from './quiz.js';
-import { el, ARROW, BADGE_GAP } from './render.js';
+import { noteOf } from './quiz.js';
+import { el, ARROW } from './render.js';
 import { buttonOutline, bounds, pathFrom, toPhoto } from './photo.js';
 
 const BOX_PAD_X = 0.6;
@@ -36,7 +36,7 @@ function text(cls, x, y, size, content) {
  *                                    of the quiz; keepView leaves the current zoom alone
  */
 export function drawPhoto(svg, layout, view) {
-  const { box, anchor, target, key, revealed, tint, flash, mini, edit, highlight } = view;
+  const { box, target, key, revealed, tint, flash, mini, edit, highlight } = view;
   const photo = layout.photo;
   svg.replaceChildren();
   svg.classList.toggle('mini', !!mini);
@@ -61,7 +61,7 @@ export function drawPhoto(svg, layout, view) {
 
   const quad = box ? boxQuad(layout, box) : null;
   if (quad) {
-    // Dim everything outside the box.
+    // Dim everything outside the box (no outline; the dimming shows the span).
     svg.append(
       el('path', {
         class: 'photo-dim',
@@ -69,7 +69,6 @@ export function drawPhoto(svg, layout, view) {
         d: `M0 0 H${photo.width} V${photo.height} H0 Z ${pathFrom(quad)}`,
       }),
     );
-    svg.append(el('path', { class: 'photo-box', d: pathFrom(quad) }));
   }
 
   // Always show the whole fingerboard; the box is marked on it.
@@ -103,26 +102,6 @@ export function drawPhoto(svg, layout, view) {
       } else {
         svg.append(text('dir', cx, cy, s * 0.6, ARROW[target.dir]));
       }
-    }
-  }
-
-  if (anchor) {
-    const ab = anchor.button;
-    const ring = buttonOutline(photo, ab, 0.08);
-    svg.append(el('path', { class: 'photo-anchor', d: pathFrom(ring) }));
-
-    if (!mini) {
-      const rb = bounds(ring);
-      const h = Math.max(rb.h * 0.42, minLabel);
-      const w = h * 2.1;
-      const [bx, by] = toPhoto(photo, [-BADGE_GAP, ab.pos]);
-      if (ab.rowIndex > 0) {
-        const [lx, ly] = toPhoto(photo, [ab.x - 0.5, ab.pos]);
-        svg.append(el('line', { class: 'photo-leader', x1: bx + w / 2, y1: by, x2: lx, y2: ly }));
-      }
-      svg.append(el('rect', { class: 'anchor-badge', x: bx - w / 2, y: by - h / 2, width: w, height: h, rx: h * 0.25 }));
-      svg.append(text('anchor-label', bx, by, h * 0.62, `${spell(noteOf(anchor), key)} ${ARROW[anchor.dir]}`));
-      fit.push([bx - w / 2, by - h / 2], [bx + w / 2, by + h / 2]);
     }
   }
 

@@ -1,15 +1,16 @@
 # Button Boxer
 
 A quizzer for memorizing the treble buttons of a two-row half-step button accordion
-(currently a 21-button C#/D). It highlights an anchor button inside a hand-span box,
-lights up a nearby button with a bellows direction (→ pull, ← push), and you name the note.
+(currently a 21-button C#/D). It dims everything outside a hand span around one of
+the Ds, lights up a button in it with a bellows direction (→ pull, ← push), and you name the note.
 
 - **Practice:** tap to reveal, then swipe → if you got it right or ← if you didn't. You can
   swipe without revealing; the answer flashes briefly. On desktop: Space reveals, ←/→
   mark wrong/right.
-- **Blitz:** automatic. The box moves to a new anchor, the target lights up, and the
+- **Blitz:** automatic. The hand span moves, the target lights up, and the
   answer is shown after the timer runs out.
-- The whole keyboard is always on screen with the box drawn on it. **Show Ds** tints
+- Keys: any major key from F to B, or **Chromatic** (every button is fair game).
+- The whole keyboard is always on screen, dimmed outside the hand span. **Show Ds** tints
   every D button as a landmark (off by default).
 
 See [SPEC.md](SPEC.md) for the full design.

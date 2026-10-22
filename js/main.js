@@ -1,5 +1,5 @@
 import { buildLayout } from './layout.js';
-import { KEYS, getKey, spell, toPitchClass } from './theory.js';
+import { KEYS, getKey, keyLabel, spell, toPitchClass } from './theory.js';
 import { DIFFICULTIES, QUIZZES_PER_ROUND, newRound, noteOf, pickTarget } from './quiz.js';
 import { drawKeyboard, ARROW } from './render.js';
 import { drawPhoto } from './render-photo.js';
@@ -336,7 +336,6 @@ function render() {
   const edit = editing();
   const view = {
     box: edit ? null : state.round?.box,
-    anchor: edit ? null : state.round?.anchor,
     target: edit ? null : state.target,
     key: key(),
     revealed: state.revealed,
@@ -398,7 +397,7 @@ function render() {
   } else if (!blitz) {
     els.hint.textContent = 'Press Start';
   } else {
-    els.hint.textContent = state.target ? '' : 'Find the anchor…';
+    els.hint.textContent = state.target ? '' : 'New hand position…';
   }
 
   els.progress.textContent = state.round
@@ -593,7 +592,7 @@ async function init() {
 
   fillSelect(els.layout, layoutIndex.map((l) => [l.id, specCache.get(l.id).name ?? l.id]), settings.layoutId);
   els.layout.closest('label').hidden = layoutIndex.length < 2;
-  fillSelect(els.key, KEYS.map((k) => [k.name, `${k.name} major`]), key().name);
+  fillSelect(els.key, KEYS.map((k) => [k.name, keyLabel(k)]), key().name);
   settings.difficulty = fillSelect(
     els.difficulty,
     Object.entries(DIFFICULTIES).map(([id, d]) => [id, d.label]),

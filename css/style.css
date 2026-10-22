@@ -9,7 +9,6 @@
   --btn-stroke: #3a3631;
   --box-stroke: #8f877b;
   --anchor: #ff1f8f;
-  --anchor-text: #ffffff;
   --target: #2563eb;
   --target-text: #ffffff;
   --correct: #16a34a;
@@ -144,6 +143,10 @@ select {
   stroke-width: 0.04;
 }
 
+.btn.outside {
+  opacity: 0.3;
+}
+
 .btn.dtone {
   fill: color-mix(in srgb, var(--dtone) 45%, var(--btn-fill));
   stroke: var(--dtone);
@@ -181,37 +184,8 @@ select {
   }
 }
 
-.anchor-ring {
-  fill: none;
-  stroke: var(--anchor);
-  stroke-width: 0.12;
-}
-
-.mini .anchor-ring {
-  stroke-width: 0.18;
-}
-
 .mini .btn {
   stroke-width: 0.08;
-}
-
-.anchor-leader {
-  stroke: var(--anchor);
-  stroke-width: 0.07;
-  stroke-linecap: round;
-}
-
-.box {
-  fill: none;
-  stroke: var(--box-stroke);
-  stroke-width: 0.04;
-  stroke-dasharray: 0.12 0.08;
-}
-
-.mini .box {
-  stroke: var(--anchor);
-  stroke-width: 0.12;
-  stroke-dasharray: none;
 }
 
 text {
@@ -238,33 +212,10 @@ text {
   fill: var(--target-text);
 }
 
-.anchor-badge {
-  fill: var(--anchor);
-}
-
-.anchor-label {
-  font-size: 0.28px;
-  font-weight: 700;
-  fill: var(--anchor-text);
-}
-
 /* photo view */
 
 .photo-dim {
   fill: rgb(0 0 0 / 0.5);
-}
-
-.photo-box {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 2px;
-  stroke-dasharray: 6 4;
-  vector-effect: non-scaling-stroke;
-}
-
-.mini .photo-box {
-  stroke: var(--anchor);
-  stroke-dasharray: none;
 }
 
 .photo-dtone {
@@ -293,24 +244,6 @@ text {
   animation: flash 0.5s ease-out;
   transform-box: fill-box;
   transform-origin: center;
-}
-
-.photo-anchor {
-  fill: none;
-  stroke: var(--anchor);
-  stroke-width: 5px;
-  vector-effect: non-scaling-stroke;
-}
-
-.mini .photo-anchor {
-  stroke-width: 2px;
-}
-
-.photo-leader {
-  stroke: var(--anchor);
-  stroke-width: 3px;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
 }
 
 /* circle editor */

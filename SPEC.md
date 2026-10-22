@@ -1,9 +1,9 @@
 # Button Box Quizzer — Spec
 
 A small static web app that helps you memorize the treble side of a 21-button C#/D
-half-step chromatic button accordion (Saltarelle Aether II). It shows an **anchor** button
-inside a box you can reach with one hand, lights up a **quiz** button with a bellows
-direction, and asks: *what note is that?*
+half-step chromatic button accordion (Saltarelle Aether II). It dims everything outside
+a hand span (the box), lights up a **quiz** button in it with a bellows direction, and
+asks: *what note is that?*
 
 Sources: `the_work.md` (goals), `questions.md` (answers to the design questions),
 `media/layout.png` (button chart).
@@ -67,11 +67,12 @@ A layout can include a `photo`: an image of the instrument from the player's vie
 transform) from flat keyboard coordinates (x = row index, y = pos) to those centres.
 Each button's outline is a circle of radius `r` mapped through it, so it gets the
 photo's perspective, and is shifted so its centre lands on the calibrated point. The
-box outline is the box rectangle mapped the same way.
+box (the undimmed area) is the box rectangle mapped the same way.
 
 In the C#/D photo, the **end nearest the camera is the low end** (button 1).
 
-(The middle-D reference fill was removed. The quiz works better without it.)
+(The middle-D reference fill and the anchor ring were removed. The quiz works better
+without them; **Show Ds** is there for when you want a landmark.)
 
 ---
 
@@ -79,20 +80,22 @@ In the C#/D photo, the **end nearest the camera is the low end** (button 1).
 
 ### 2.1 Supported keys (v1)
 
-Major keys: **F, C, G, D, A, E, B**, picked from a dropdown. Default: D.
+Major keys: **F, C, G, D, A, E, B**, plus **Chromatic**, picked from a dropdown.
+Default: D.
 
 ### 2.2 Spelling
 
 - F major uses flats (A# shows as **Bb**).
-- Every other key uses sharps.
+- Every other key, and Chromatic, uses sharps.
 
 ### 2.3 What's "in play"
 
 A **quiz item** is a `(button, direction)` pair, where direction is push or pull. An item
 is in play for a key if the note it sounds is in that major scale. Example: in D major,
-every D-row item is in play, plus the C#-row items that sound F# or C#.
+every D-row item is in play, plus the C#-row items that sound F# or C#. In
+**Chromatic**, every item is in play (all 21 buttons, both directions).
 
-Anchors and quiz targets are always drawn from the in-play items.
+Quiz targets are always drawn from the in-play items.
 
 ---
 
@@ -105,19 +108,17 @@ Anchors and quiz targets are always drawn from the in-play items.
   every key, including E and B major where D isn't in the scale, because the anchor is
   a reference point, not a quiz answer. Layouts without `anchorNotes` allow any in-play
   item.
-- Shown with a **thick magenta outline**, plus a magenta **badge with the direction
-  arrow and the anchor's note name**. With the rows drawn vertically, "above" the button
-  is where the next button sits, so the badge goes **left of the inner row** at the
-  anchor's height. For an outer-row anchor, a
-  leader line runs from the badge through the gap in the staggered inner row.
-- Stays highlighted for the whole round (all quizzes on that anchor).
+- **Not drawn.** It only decides where the box goes: each round's box is placed around
+  one of the Ds, so the hand spans you practise are anchored on a D. Turn on
+  **Show Ds** to see them.
+- The anchor stays the same for the whole round (all quizzes in that box).
 
 ### 3.2 Direction arrows
 
 - **→ (right arrow) = pull**
 - **← (left arrow) = push**
 
-The same arrows are used for both the anchor and the quiz button.
+They mark the quiz button's bellows direction.
 
 ### 3.3 Box (hand span)
 
@@ -176,11 +177,11 @@ Mobile-first, portrait. It should also work on desktop.
   stagger.
 - **View** dropdown:
   - **Photo** (default when the layout has one): the whole fingerboard in the photo,
-    with the box outlined and everything outside it dimmed. The anchor ring, target
-    fill and box are drawn through the perspective transform. Labels stay upright
+    with everything outside the box dimmed (no outline). The target fill and the box
+    are drawn through the perspective transform. Labels stay upright
     and have a minimum size, so far-away buttons stay readable.
   - **Drawn 10° / 20° / 30°**: the vector keyboard, rotated clockwise and squashed
-    horizontally so the box is a slanted parallelogram and the buttons are ovals.
+    horizontally so the buttons are ovals. Buttons outside the box are faded.
   - **Flat**: the vector keyboard, upright.
 
 - **Show Ds** checkbox (off by default, remembered): tints every button that sounds a
@@ -188,8 +189,8 @@ Mobile-first, portrait. It should also work on desktop.
 
 ### 4.2 Main view
 
-Most of the screen. It always shows the whole keyboard, with the current box outlined
-on it. Buttons are blank (no note names) except when an answer is being shown.
+Most of the screen. It always shows the whole keyboard, with everything outside the
+current box dimmed. Buttons are blank (no note names) except when an answer is being shown.
 
 ### 4.3 Minimap
 
@@ -228,7 +229,7 @@ weighted repeats can be added later without rewiring the UI.)
 No input needed once it starts (there's a Start/Pause control).
 
 Per round:
-1. The box moves to a new anchor. **Pause 3 s** so you can find it.
+1. The box moves to a new hand position. **Pause 3 s** so you can find it.
 2. Repeat 10 times:
    1. The quiz button flashes/lights up with its direction.
    2. Wait the **guess time** (3 s on Easy, per §3.4).

@@ -1,4 +1,4 @@
-// Pitch classes, major keys, and key-aware spelling.
+// Pitch classes, major keys (plus Chromatic), and key-aware spelling.
 
 const PITCH_CLASS = {
   C: 0, 'B#': 0,
@@ -28,6 +28,7 @@ export const KEYS = [
   { name: 'A' },
   { name: 'E' },
   { name: 'B' },
+  { name: 'Chromatic', chromatic: true }, // every note is fair game; spelled with sharps
 ];
 
 export function toPitchClass(name) {
@@ -40,7 +41,11 @@ export function getKey(name) {
   return KEYS.find((k) => k.name === name) ?? KEYS.find((k) => k.name === 'D');
 }
 
-export function majorScale(key) {
+export const keyLabel = (key) => (key.chromatic ? 'Chromatic' : `${key.name} major`);
+
+// The notes in play for a key: its major scale, or all twelve for Chromatic.
+export function keyNotes(key) {
+  if (key.chromatic) return new Set(SHARP_NAMES.map((_, pc) => pc));
   const tonic = toPitchClass(key.name);
   return new Set(MAJOR_STEPS.map((step) => (tonic + step) % 12));
 }

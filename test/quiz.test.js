@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 import { buildLayout } from '../js/layout.js';
-import { getKey, spell, majorScale, toPitchClass } from '../js/theory.js';
+import { getKey, spell, keyNotes, toPitchClass } from '../js/theory.js';
 import {
   boxAt,
   boxesContaining,
@@ -74,10 +74,21 @@ test('D major: whole D row in play, plus C# row F# and C# only', () => {
 });
 
 test('every in-play note is in the scale, for every key', () => {
-  for (const name of ['F', 'C', 'G', 'D', 'A', 'E', 'B']) {
+  for (const name of ['F', 'C', 'G', 'D', 'A', 'E', 'B', 'Chromatic']) {
     const key = getKey(name);
-    const scale = majorScale(key);
+    const scale = keyNotes(key);
     for (const item of inPlayItems(csd, key)) assert.ok(scale.has(noteOf(item)));
+  }
+});
+
+test('Chromatic: every button, both directions, is in play', () => {
+  const chromatic = getKey('Chromatic');
+  assert.equal(inPlayItems(csd, chromatic).length, 42);
+  assert.equal(spell(toPitchClass('Bb'), chromatic), 'A#');
+  const rng = seeded(11);
+  for (const size of [5, 7, 10]) {
+    const round = newRound(csd, chromatic, size, rng);
+    assert.equal(round.targets.length, csd.buttons.filter((b) => inBox(round.box, b)).length * 2 - 1);
   }
 });
 
@@ -108,9 +119,9 @@ test('anchor can sit anywhere in the box', () => {
 
 test('rounds: anchor in box, targets in box, in key, never the anchor', () => {
   const rng = seeded(42);
-  for (const name of ['F', 'C', 'G', 'D', 'A', 'E', 'B']) {
+  for (const name of ['F', 'C', 'G', 'D', 'A', 'E', 'B', 'Chromatic']) {
     const key = getKey(name);
-    const scale = majorScale(key);
+    const scale = keyNotes(key);
     for (const size of [5, 7, 10]) {
       for (let i = 0; i < 50; i++) {
         const round = newRound(csd, key, size, rng);

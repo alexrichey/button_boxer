@@ -1,7 +1,7 @@
 // Quiz logic: which items are in play, where the box goes, what gets asked.
 // No DOM here, so it can be tested in Node.
 
-import { majorScale } from './theory.js';
+import { keyLabel, keyNotes } from './theory.js';
 
 export const DIRECTIONS = ['push', 'pull'];
 export const QUIZZES_PER_ROUND = 10;
@@ -25,7 +25,7 @@ export function sameItem(a, b) {
 }
 
 export function inPlayItems(layout, key) {
-  const scale = majorScale(key);
+  const scale = keyNotes(key);
   return layout.buttons.flatMap((button) =>
     DIRECTIONS.filter((dir) => scale.has(button[dir])).map((dir) => ({ button, dir })),
   );
@@ -78,7 +78,7 @@ export function anchorItems(layout, key) {
 export function newRound(layout, key, boxSize, rng = Math.random) {
   const size = clampBoxSize(layout, boxSize);
   const items = inPlayItems(layout, key);
-  if (items.length === 0) throw new Error(`No notes of ${key.name} major on this layout`);
+  if (items.length === 0) throw new Error(`No notes of ${keyLabel(key)} on this layout`);
   const anchors = anchorItems(layout, key);
   if (anchors.length === 0) throw new Error('No buttons sound the layout\'s anchor notes');
 
