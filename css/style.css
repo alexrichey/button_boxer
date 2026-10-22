@@ -14,6 +14,7 @@
   --target-text: #ffffff;
   --correct: #16a34a;
   --wrong: #dc2626;
+  --dtone: #f59e0b;
 
   color-scheme: light dark;
 }
@@ -31,7 +32,8 @@
     --box-stroke: #6f685e;
     --anchor: #ff4fa7;
     --target: #3b82f6;
-          }
+    --dtone: #fbbf24;
+  }
 }
 
 * {
@@ -79,6 +81,11 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.controls input[type='checkbox'] {
+  margin: 0;
+  accent-color: var(--dtone);
 }
 
 .controls label[hidden] {
@@ -135,6 +142,11 @@ select {
   fill: var(--btn-fill);
   stroke: var(--btn-stroke);
   stroke-width: 0.04;
+}
+
+.btn.dtone {
+  fill: color-mix(in srgb, var(--dtone) 45%, var(--btn-fill));
+  stroke: var(--dtone);
 }
 
 .btn.target {
@@ -253,6 +265,13 @@ text {
 .mini .photo-box {
   stroke: var(--anchor);
   stroke-dasharray: none;
+}
+
+.photo-dtone {
+  fill: color-mix(in srgb, var(--dtone) 40%, transparent);
+  stroke: var(--dtone);
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
 }
 
 .photo-target {

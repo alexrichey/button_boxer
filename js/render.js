@@ -8,7 +8,7 @@
 // counter-transformed so they stay upright and undistorted.
 
 import { spell } from './theory.js';
-import { inBox, noteOf } from './quiz.js';
+import { noteOf } from './quiz.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const COL = 1.0; // horizontal distance between rows
@@ -53,19 +53,20 @@ const matrixAttr = ({ a, b, c, d }, e = 0, f = 0) => `matrix(${a} ${b} ${c} ${d}
  *   tint                       'correct' | 'wrong' | null (reveal colouring)
  *   flash                      animate the target as it appears
  *   mini                       draw the whole keyboard, no labels
+ *   highlight                  Set of pitch classes; tint buttons that sound one
  *   tilt                       degrees to tilt the keyboard clockwise (0 = flat, no squash)
  */
 export function drawKeyboard(svg, layout, view) {
-  const { box, anchor, target, key, revealed, tint, flash, mini, tilt = 0 } = view;
+  const { box, anchor, target, key, revealed, tint, flash, mini, highlight, tilt = 0 } = view;
   svg.replaceChildren();
   svg.classList.toggle('mini', !!mini);
 
   const lastX = (layout.rows.length - 1) * COL;
-  const whole = mini || !box;
-  const buttons = whole ? layout.buttons : layout.buttons.filter((b) => inBox(box, b));
+  // Always the whole keyboard; the box is drawn on it.
+  const buttons = layout.buttons;
   const positions = buttons.map((b) => b.pos);
-  const top = whole ? Math.min(...positions) : box.lo;
-  const bottom = whole ? Math.max(...positions) : box.hi;
+  const top = Math.min(...positions);
+  const bottom = Math.max(...positions);
   const cx = lastX / 2;
   const cy = (top + bottom) / 2;
   const boxRight = lastX + BOX_PAD_X;
@@ -136,6 +137,7 @@ export function drawKeyboard(svg, layout, view) {
     const isTarget = target?.button.id === b.id;
     const g = el('g', { transform: `translate(${rowX(b)} ${b.pos})` });
     const classes = ['btn'];
+    if (highlight && (highlight.has(b.push) || highlight.has(b.pull))) classes.push('dtone');
     if (isTarget) classes.push('target');
     if (isTarget && revealed && tint) classes.push(tint);
     if (isTarget && flash) classes.push('flash');

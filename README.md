@@ -9,6 +9,8 @@ lights up a nearby button with a bellows direction (→ pull, ← push), and you
   mark wrong/right.
 - **Blitz:** automatic. The box moves to a new anchor, the target lights up, and the
   answer is shown after the timer runs out.
+- The whole keyboard is always on screen with the box drawn on it. **Show Ds** tints
+  every D button as a landmark (off by default).
 
 See [SPEC.md](SPEC.md) for the full design.
 

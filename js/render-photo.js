@@ -31,11 +31,12 @@ function text(cls, x, y, size, content) {
 
 /**
  * @param view  same fields as drawKeyboard, plus:
+ *   highlight: Set of pitch classes   tint every button that sounds one of them
  *   edit: { selectedId, keepView }   draw every button's outline for calibration instead
  *                                    of the quiz; keepView leaves the current zoom alone
  */
 export function drawPhoto(svg, layout, view) {
-  const { box, anchor, target, key, revealed, tint, flash, mini, edit } = view;
+  const { box, anchor, target, key, revealed, tint, flash, mini, edit, highlight } = view;
   const photo = layout.photo;
   svg.replaceChildren();
   svg.classList.toggle('mini', !!mini);
@@ -71,11 +72,19 @@ export function drawPhoto(svg, layout, view) {
     svg.append(el('path', { class: 'photo-box', d: pathFrom(quad) }));
   }
 
-  const fit = [];
+  // Always show the whole fingerboard; the box is marked on it.
+  const fit = [[all.minX, all.minY], [all.maxX, all.maxY]];
   if (quad) fit.push(...quad);
-  else fit.push([all.minX, all.minY], [all.maxX, all.maxY]);
   // Far-away buttons are tiny in the photo; keep labels readable relative to the view.
-  const minLabel = bounds(fit).h * 0.045;
+  const minLabel = bounds(fit).h * 0.05;
+
+  if (highlight) {
+    for (const b of layout.buttons) {
+      if (highlight.has(b.push) || highlight.has(b.pull)) {
+        svg.append(el('path', { class: 'photo-dtone', d: pathFrom(outlines.get(b.id)) }));
+      }
+    }
+  }
 
   if (target) {
     const pts = outlines.get(target.button.id);

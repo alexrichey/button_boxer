@@ -1,5 +1,5 @@
 import { buildLayout } from './layout.js';
-import { KEYS, getKey, spell } from './theory.js';
+import { KEYS, getKey, spell, toPitchClass } from './theory.js';
 import { DIFFICULTIES, QUIZZES_PER_ROUND, newRound, noteOf, pickTarget } from './quiz.js';
 import { drawKeyboard, ARROW } from './render.js';
 import { drawPhoto } from './render-photo.js';
@@ -21,6 +21,8 @@ const VIEWS = [
   ['0', 'Flat'],
 ];
 
+const D_TONES = new Set([toPitchClass('D')]);
+
 const SETTINGS_KEY = 'button-boxer-settings';
 const PHOTO_EDITS_KEY = (layoutId) => `button-boxer-photo:${layoutId}`;
 
@@ -31,6 +33,7 @@ const els = {
   mode: $('mode-select'),
   difficulty: $('difficulty-select'),
   view: $('view-select'),
+  dtone: $('dtone-toggle'),
   stage: $('stage'),
   zoom: $('zoom'),
   mini: $('mini'),
@@ -73,7 +76,7 @@ function freshState() {
 // ---------- settings ----------
 
 function loadSettings() {
-  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy', view: 'photo' };
+  const defaults = { layoutId: null, key: 'D', mode: 'practice', difficulty: 'easy', view: 'photo', showDs: false };
   try {
     return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') };
   } catch {
@@ -340,6 +343,7 @@ function render() {
     tint: state.tint,
     flash: state.flash,
     tilt: Number(settings.view) || 0,
+    highlight: !edit && settings.showDs ? D_TONES : null,
   };
 
   if (edit || usePhoto()) {
@@ -366,6 +370,9 @@ function render() {
   els.difficulty.closest('label').hidden = edit;
   els.key.closest('label').hidden = edit;
   els.view.closest('label').hidden = edit;
+  els.dtone.closest('label').hidden = edit;
+  // The main view shows the whole keyboard; the minimap only helps the zoomed editor.
+  els.mini.toggleAttribute('hidden', !edit);
   els.stage.classList.toggle('editing', edit);
 
   els.answer.className = 'answer' + (state.tint ? ` ${state.tint}` : '');
@@ -527,6 +534,12 @@ function bindInput() {
   els.mode.addEventListener('change', onSettingChange('mode'));
   els.difficulty.addEventListener('change', onSettingChange('difficulty'));
   els.view.addEventListener('change', onSettingChange('view'));
+  els.dtone.addEventListener('change', (e) => {
+    settings.showDs = e.target.checked;
+    saveSettings();
+    e.target.blur();
+    render();
+  });
 }
 
 function restart() {
@@ -587,6 +600,7 @@ async function init() {
     settings.difficulty,
   );
   fillLayoutDependentSelects();
+  els.dtone.checked = !!settings.showDs;
 
   bindInput();
   restart();

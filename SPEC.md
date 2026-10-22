@@ -154,14 +154,14 @@ Mobile-first, portrait. It should also work on desktop.
 
 ```
 ┌─────────────────────────────┐
-│ Key [D ▾]  Mode [Practice ▾]│  ┌──────┐
-│ Difficulty [Easy ▾]         │  │mini- │
-│                             │  │map   │
-│                             │  └──────┘
+│ Key [D ▾]  Mode [Practice ▾]│
+│ Level [Easy ▾] View [Photo ▾]│
+│ [ ] Show Ds                 │
 │        ┌───────────┐        │
-│        │  zoomed   │        │
-│        │  box view │        │
-│        │  (D | C#) │        │
+│        │   whole   │        │
+│        │ keyboard, │        │
+│        │ box drawn │        │
+│        │   on it   │        │
 │        └───────────┘        │
 │                             │
 │     [ answer appears here ] │
@@ -175,24 +175,27 @@ Mobile-first, portrait. It should also work on desktop.
   top**, D row (inner) on the left, C# row (outer) on the right, with the half-button
   stagger.
 - **View** dropdown:
-  - **Photo** (default when the layout has one): the zoomed view is a crop of the photo
-    around the box, with everything outside the box dimmed. The anchor ring, target
+  - **Photo** (default when the layout has one): the whole fingerboard in the photo,
+    with the box outlined and everything outside it dimmed. The anchor ring, target
     fill and box are drawn through the perspective transform. Labels stay upright
     and have a minimum size, so far-away buttons stay readable.
   - **Drawn 10° / 20° / 30°**: the vector keyboard, rotated clockwise and squashed
     horizontally so the box is a slanted parallelogram and the buttons are ovals.
   - **Flat**: the vector keyboard, upright.
 
-### 4.2 Zoomed box view
+- **Show Ds** checkbox (off by default, remembered): tints every button that sounds a
+  D in either bellows direction (on the C#/D: D-row 3, 6 and 9, push) as a landmark.
 
-Most of the screen. It draws only the buttons in the current box, large enough to tap.
-Buttons are blank (no note names) except when an answer is being shown.
+### 4.2 Main view
+
+Most of the screen. It always shows the whole keyboard, with the current box outlined
+on it. Buttons are blank (no note names) except when an answer is being shown.
 
 ### 4.3 Minimap
 
-A small panel in the top-right that draws the whole 21-button keyboard with the
-current box outlined and the anchor and quiz buttons marked. It's for display only;
-tapping it does nothing.
+Only shown in **Edit circles**, where the main view is zoomed in on one button: a
+small panel in the top-right with every circle and the selected one marked. It's for
+display only; tapping it does nothing.
 
 ---
 
